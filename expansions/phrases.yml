@@ -1,0 +1,20 @@
+# expansions/phrases.yml
+matches:
+  # 这个热字符串只在 VS Code 或 Sublime Text 中生效
+  # 利用了正则表达式的“或”操作符 |
+  - trigger: ":fn"
+    replace: "function $|$() {\n  \n}"
+    filter_class: "Chrome_WidgetWin_1|PX_WINDOW_CLASS"
+
+  # 这个热字符串只在以 "Administrator: " 开头的 CMD 或 PowerShell 窗口中生效
+  # 利用了行首锚点 ^
+  - trigger: ":admin"
+    replace: "Running with administrator privileges."
+    filter_title: "^Administrator: "
+
+  # 这个热字符串只对名为 "Code.exe" 的进程生效，并且要求是精确匹配，
+  # 避免匹配到 "MyCode.exe"
+  # 利用了行尾锚点 $ 和反斜杠转义
+  - trigger: ":vscode"
+    replace: "This is Visual Studio Code."
+    filter_exec: "Code\\.exe$"

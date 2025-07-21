@@ -66,6 +66,13 @@ AHKestra 的插件系统基于两大核心概念：
             "type": "sequence",
             "function": "findProject",
             "hint": "查找并打开项目"
+        },
+        {
+                "keys": ["^!n"],
+                "type": "regular",
+                "function": "createFileAndRefresh",
+                "hint": "在资源管理器中创建文件并刷新上下文",
+                "condition": "isExplorer"
         }
     ]
 }
@@ -249,6 +256,7 @@ class Plugin {
     }
 }
 ```
+
 ```json
 ; manifest.json
 "menuItems": [{
@@ -261,6 +269,7 @@ class Plugin {
 ### 3.3 核心服务
 
 您可以通过全局类名直接访问以下核心服务：
+
 *   **`ConfigService`**:
     *   `ConfigService.Get(path)`: 获取配置项，如 `this.context.name . ".settings.apiKey"`。
 *   **`EventService`**:
@@ -269,10 +278,14 @@ class Plugin {
     *   **关键事件**: `"Config.Changed"`
 *   **`ContextService`**:
     *   `ContextService.RegisterProvider(processName, providerFunc)`: 注册一个针对特定程序的深度上下文提供者。
-    *   `ContextService.InvalidateContext(scope)`: 主动使缓存失效，`scope` 可以是 `"active"` 或 `"all"`。
+    *   **`ContextService.InvalidateContext(scope)`**: **[ 新增 ]** 主动使上下文缓存失效。这是实现精细化上下文感知的**关键API**。
+        *   **`scope`** (字符串，可选，默认为 `"active"`):
+            *   `"active"`: 使“活动层”缓存失效。当您的插件执行了某个操作（如文件创建、目录切换、与应用内部API交互），改变了当前窗口的内部状态，但**并未切换窗口**时，您**应该**调用此方法。这能确保下一次操作获取到最新的文本选择、焦点控件或插件自定义的上下文。
+            *   `"all"`: 使所有层级的缓存（包括“稳定层”）都失效。这是一种更彻底的刷新，通常在执行了可能影响整个系统状态的宏大操作后使用。
 *   **`GuiService`**: 主要由框架内部使用。
 *   **`PluginConfigGuiFactory`**:
     *   `this.ShowConfiguration(ownerHwnd)`: 如果您在 `manifest` 中定义了 `configuration`，框架会自动为您注入此方法，用于显示您插件的配置窗口。
+
 
 ---
 
@@ -311,6 +324,36 @@ class Plugin {
     
     openInVSCode(ctx) {
         Run "code .", ctx.ActiveWindow.title
+    }
+
+    /**
+     * 对应 hotkeys 中的 "createFileAndRefresh"
+     * 这个函数演示了插件如何在执行一个改变内部状态的操作后，
+     * 主动通知框架更新上下文缓存。
+     */
+    createFileAndRefresh(ctx) {
+        ; 1. 从上下文中获取当前资源管理器的路径
+        local currentPath := ctx.ActiveWindow.title
+        
+        ; 2. 执行一个会改变“活动层”上下文的操作。
+        ;    例如，在当前路径下创建一个新文件。
+        ;    这个操作不会切换窗口，因此无法被框架的事件钩子自动捕获。
+        try {
+            FileAppend("This is a new file created by AHKestra Sample Plugin.", currentPath . "\AHKestra_Test_File.txt")
+            MsgBox "文件已在以下路径创建：`n" . currentPath, "操作成功", 64
+        } catch {
+            MsgBox "文件创建失败，请检查权限。", "错误", 16
+            return
+        }
+
+        ; 3. **核心步骤**: 主动使“活动层”缓存失效。
+        ;    如果不执行这一步，在缓存有效期内（如250ms）立即触发的下一个依赖
+        ;    “选中文本”或“焦点控件”的热键，可能会获取到陈旧的上下文。
+        ContextService.InvalidateContext("active")
+        
+        ; (可选) 为了演示效果，可以立即获取一次新的上下文并显示
+        ; local newCtx := ContextService.GetContext()
+        ; MsgBox "上下文已刷新！"
     }
 
     ; --- 配置与事件处理 ---

@@ -1,0 +1,74 @@
+{
+  "name": "SamplePlugin",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "description": "一个展示 AHKestra 插件开发各项能力的示例插件。",
+  "main": "main.ahk",
+  "configuration": {
+    "apiKey": {
+      "type": "string",
+      "default": "",
+      "label": "API Key",
+      "description": "用于访问服务的秘密 API 密钥。"
+    },
+    "autoStart": {
+      "type": "boolean",
+      "default": true,
+      "label": "自动启动",
+      "description": "如果勾选，此插件将随 AHKestra 自动启动。"
+    },
+    "displayMode": {
+      "type": "dropdown",
+      "default": "compact",
+      "label": "显示模式",
+      "description": "结果的显示方式。",
+      "options": [
+        { "label": "紧凑视图", "value": "compact" },
+        { "label": "详细视图", "value": "detailed" }
+      ]
+    }
+  },
+  "contributes": {
+    "hotkeys": [
+      {
+        "keys": ["^!s"],
+        "type": "regular",
+        "function": "showSimpleMessage",
+        "hint": "显示一条简单的信息"
+      },
+      {
+        "keys": ["AppsKey", "t"],
+        "type": "layer",
+        "function": "openTerminal",
+        "hint": "在当前目录打开终端",
+        "condition": "isExplorer"
+      },
+      {
+        "keys": ["f", "p"],
+        "type": "sequence",
+        "function": "findProject",
+        "hint": "查找并打开项目"
+      },
+      {
+        "keys": ["^!n"],
+        "type": "regular",
+        "function": "createFileAndRefresh",
+        "hint": "在资源管理器中创建文件并刷新上下文",
+        "condition": "isExplorer"
+      }
+    ],
+    "menuItems": [
+      {
+        "path": "示例插件/操作/显示上下文信息",
+        "function": "showContextInfo",
+        "condition": ""
+      },
+      {
+        "path": "文件操作/在VSCode中打开",
+        "function": "openInVSCode",
+        "condition": "isExplorer"
+      }
+    ],
+    "expansions": ["expansions/phrases.yml"]
+  }
+}
